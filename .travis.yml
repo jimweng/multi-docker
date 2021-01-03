@@ -1,0 +1,24 @@
+sudo: required
+service:
+  - docker
+
+before_install:
+  - docker build -t jimweng/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true jimweng/react-test npm test
+
+after_success:
+  - docker build -t jimweng/multi-client ./client
+  - docker build -t jimweng/multi-nginx ./nginx
+  - docker build -t jimweng/multi-server ./server
+  - docker build -t jimweng/multi-worker ./worker
+
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take those images and push them to docker hub
+  - docker push jimweng/multi-client
+  - docker push jimweng/multi-nginx
+  - docker push jimweng/multi-server
+  - docker push jimweng/multi-worker
